@@ -15,7 +15,7 @@
         </style>
     </head>
     <body style="text-align: center;">
-        <h2>R Critical Calculation</h2>
+        <h2>R Critical, Damping Ratio & Q Factor Calculation</h2>
         <div>
             <form id="entries" oninput="workout()">
                 <label for="R">R_crit(Ohm)</label>
@@ -24,6 +24,7 @@
                 <input type='number' id='L'>
                 <label for="C">C(nF)</label>
                 <input type='number' id='C'>
+                <button type="reset">Reset</button>
             </form>
         </div>
         <h3>Working Out</h3>
@@ -34,7 +35,7 @@
         <h3>Information</h3>
         <ul>
             <li>Filling in 2 of the fields will trigger the calculation of the third value</li>
-            <li>Filling in all fields will reset them</li>
+            <li>Filling in all fields will calculate Damping Ratio and Quality Factor</li>
         </ul>
     </body>
     <script>
@@ -46,8 +47,8 @@
             let nanCount=isNaN(R)+2*isNaN(L)+3*isNaN(C);
             switch(nanCount){
                 case 0:
-                    document.getElementById('entries').reset();
-                    working.innerHTML = "Reset!";
+                    //Damping Ratio & Q Factor
+                    working.innerHTML = "Use series if 2ODE in terms of i, parallel if in terms of v<br><br>Damping Ratio<br><br>Series:<br>ζ = R/2 * sqrt(C/L)<br>= "+R+"/2 * sqrt("+sigfig(C)+"/"+sigfig(L)+") = "+sigfig(R/2*Math.sqrt(C/L))+"<br><br>Parallel:<br>ζ = 1/(2R) * sqrt(L/C)<br>= 1/(2"+R+") * sqrt("+sigfig(L)+"/"+sigfig(C)+") = "+sigfig(1/R/2*Math.sqrt(L/C))+"<br><br><br>Q Factor<br><br>Series:<br>Q = 1/R * sqrt(L/C)<br>= 1/"+R+" * sqrt("+sigfig(L)+"/"+sigfig(C)+") = "+sigfig(1/R*Math.sqrt(L/C))+"<br><br>Parallel:<br>Q = R * sqrt(C/L)<br>= "+R+" * sqrt("+sigfig(C)+"/"+sigfig(L)+") = "+sigfig(R*Math.sqrt(C/L));
                     break;
                 case 1:
                     //Resistor
