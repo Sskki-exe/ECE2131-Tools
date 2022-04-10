@@ -128,7 +128,7 @@
                         let L = elements[i].querySelector('#L') .value;
                         if (L!=""){
                             sumB += parseFloat(L)*0.001*w;
-                            working.innerHTML += i>1? add(parseFloat(L)*0.001)+"*"+w+"j " : parseFloat(L)*0.001+"*"+w+"j "
+                            working.innerHTML += i>1? sigfig(add(parseFloat(L)*0.001))+"*"+w+"j " : sigfig(parseFloat(L)*0.001)+"*"+w+"j "
                         }
                         break;
                     case 'capacitor':
