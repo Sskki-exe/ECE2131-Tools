@@ -35,7 +35,7 @@
         <h3>Information</h3>
         <ul>
             <li>Filling in 2 of the fields will trigger the calculation of the third value</li>
-            <li>Filling in all fields will calculate Damping Ratio and Quality Factor, R_crit will be treated as resistance</li>
+            <li>Filling in all fields will calculate Damping Ratio and Quality Factor then determine what kind of damping occurred, R_crit will be treated as resistance</li>
             <li>Use series if 2ODE in terms of i, parallel if in terms of v</li>
         </ul>
     </body>
@@ -49,7 +49,9 @@
             switch(nanCount){
                 case 0:
                     //Damping Ratio & Q Factor
-                    working.innerHTML = "Damping Ratio<br><br>Series:<br>ζ = R/2 * sqrt(C/L)<br>= "+R+"/2 * sqrt("+sigfig(C)+"/"+sigfig(L)+") = "+sigfig(R/2*Math.sqrt(C/L))+"<br><br>Parallel:<br>ζ = 1/(2R) * sqrt(L/C)<br>= 1/(2"+R+") * sqrt("+sigfig(L)+"/"+sigfig(C)+") = "+sigfig(1/R/2*Math.sqrt(L/C))+"<br><br><br>Q Factor<br><br>Series:<br>Q = 1/R * sqrt(L/C)<br>= 1/"+R+" * sqrt("+sigfig(L)+"/"+sigfig(C)+") = "+sigfig(1/R*Math.sqrt(L/C))+"<br><br>Parallel:<br>Q = R * sqrt(C/L)<br>= "+R+" * sqrt("+sigfig(C)+"/"+sigfig(L)+") = "+sigfig(R*Math.sqrt(C/L));
+                    let Qseries = 1/R*Math.sqrt(L/C);
+                    let Qparallel = R*Math.sqrt(C/L);
+                    working.innerHTML = "Damping Ratio<br><br>Series:<br>ζ = R/2 * sqrt(C/L)<br>= "+R+"/2 * sqrt("+sigfig(C)+"/"+sigfig(L)+") = "+sigfig(R/2*Math.sqrt(C/L))+"<br><br>Parallel:<br>ζ = 1/(2R) * sqrt(L/C)<br>= 1/(2"+R+") * sqrt("+sigfig(L)+"/"+sigfig(C)+") = "+sigfig(1/R/2*Math.sqrt(L/C))+"<br><br><br>Q Factor<br><br>Series(i):("+(Qseries<.5?"Overdamped":Qseries==.5?"Critically Damped":"Underdamped")+")<br>Q = 1/R * sqrt(L/C)<br>= 1/"+R+" * sqrt("+sigfig(L)+"/"+sigfig(C)+") = "+sigfig(Qseries)+"<br><br>Parallel(v):("+(Qparallel<.5?"Overdamped":Qparallel==.5?"Critically Damped":"Underdamped")+")<br>Q = R * sqrt(C/L)<br>= "+R+" * sqrt("+sigfig(C)+"/"+sigfig(L)+") = "+sigfig(Qparallel);
                     break;
                 case 1:
                     //Resistor
