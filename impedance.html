@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <style>
+            #workingbox, #circuit, #parallel, #series {
+                border-style: solid;
+                height: fit-content;
+                width: fit-content;                
+                text-align: center;
+                margin: auto;
+                margin-top: 10px;
+                margin-bottom: 10px;
+            }
+            #series {
+                border-top: 0;
+                border-bottom: 0;
+                padding: 0;
+            }
+            #parallel {
+                border-left: 0;
+                border-right: 0;
+                padding-bottom: 10px;
+            }
+            .backend {
+                font-size: 0;
+            }
+            div {
+                margin: 10px;
+                padding: 0px 10px;
+            }
+        </style>
+    </head>
+    <body onload="init()" style="text-align: center;">
+        <h2>Impedance Calculator</h2>
+        <div>        
+            <label for='w'>w(rad/s):</label>
+            <input type='number' id='w' oninput='setW(this.value);sumAll()'><br>
+            <label for='degW'>w(degrees/s):</label>
+            <input type='number' id='degW' oninput='setDegW(this.value);sumAll()'><br>
+            <label for='HzW'>f(Hz):</label>
+            <input type='number' id='HzW' oninput='setHzW(this.value);sumAll()'>
+        </div>         
+        <div id='circuit' style='border-color:gray;'>
+            <span id='output'>Z = 0</span>
+            <div>
+                <span class='backend'>Red</span>                
+                <button onclick='addSeries(this)' type='button'>Add Series</button>
+            </div>
+        </div>
+        <h3>Working Out</h3>
+        <div id="workingbox" style='border-color:gray;'>
+            <span id="wCalc"></span>
+            <span id='working'></span>
+        </div>
+        <br><br><br>
+        <h3>Information</h3>
+        <ul>
+            <li>Elements in Series have vertical borders of the same color</li>
+            <li>Elements in Parallel have black horiztonal borders</li>
+            <li>Numbers are shown to 4 significant digits but each calculation is done with the maximum digits possible</li>
+        </ul>
+    </body>
+    <script>
+        var working = document.getElementById('working');
+        var w = 1.0;
+        var colors = ["Red","Cyan","Blue","DarkBlue","LightBlue","Purple","Yellow","Lime","Magenta","Orange","Brown","Maroon","Green","Olive"];
+        var cInt = 0;
+        function setW(val){
+            w = parseFloat(val);
+            document.getElementById("wCalc").innerHTML = "";
+            document.getElementById("degW").value = sigfig(w/Math.PI*180);
+            document.getElementById("HzW").value = sigfig(w/2/Math.PI);
+        }
+        function setDegW(val){
+            w = parseFloat(val)/180*Math.PI;
+            document.getElementById("wCalc").innerHTML = "<p>ω = "+val+"°/s = "+sigfig(w)+"rad/s</p>";
+            document.getElementById("w").value = sigfig(w);
+            document.getElementById("HzW").value = sigfig(w/2/Math.PI);
+        }
+        function setHzW(val){
+            w = parseFloat(val)*2*Math.PI;
+            document.getElementById("wCalc").innerHTML = "<p>ω = 2π*"+val+"Hz = "+sigfig(w)+"rad/s</p>";
+            document.getElementById("w").value = sigfig(w);
+            document.getElementById("degW").value = sigfig(w/Math.PI*180);
+        }
+        function addParallel(e){
+            cInt = cInt+1 > colors.length ? 0 : cInt+1;
+            e.parentElement.outerHTML += "<div id='parallel' style='border-color:black'><span id='output'>Z = 0</span><div><span class='backend'>"+colors[cInt]+"</span><button onclick='addSeries(this)' type='button'>Add Series</button><button onclick='this.parentElement.parentElement.remove();sumAll()' type='button'>X</button></div></div>";
+        }
+        function addSeries(e){
+            let color = e.parentElement.querySelector('.backend').textContent;
+            e.parentElement.outerHTML += "<div id='series' style='border-color:"+color+";'><div><button onclick='addResistor(this)' type='button'>Add Resistor</button><button onclick='addInductor(this)' type='button'>Add Inductor</button><button onclick='addCapacitor(this)' type='button'>Add Capacitor</button><button onclick='addParallel(this)' type='button'>Add Parallel</button><button onclick='this.parentElement.parentElement.remove();sumAll()' type='button'>X</button></div><span id='output' style='color:"+color+"'>Z = 0</span></div>";
+        }
+        function init(){    
+            colorI = 0;
+            document.getElementById("w").value = 1000;
+            setW(1000);
+        }
+        function addResistor(e){
+            e.parentElement.outerHTML += "<div id='resistor'><label for='r'>Resistor(Ohm):</label><input type='number' id='r' oninput='sumAll();'><button onclick='this.parentElement.remove();sumAll()' type='button'>X</button></div>";
+        }        
+        function addInductor(e){
+            e.parentElement.outerHTML += "<div id='inductor'><label for='L'>Inductor(mH):</label><input type='number' id='L' oninput='sumAll();'><button onclick='this.parentElement.remove();sumAll()' type='button'>X</button></div>";
+        }
+        function addCapacitor(e){
+            e.parentElement.outerHTML += "<div id='capacitor'><label for='c'>Capacitor(nF):</label><input type='number' id='c' oninput='sumAll();'><button onclick='this.parentElement.remove();sumAll()' type='button'>X</button></div>";
+        }
+        function sumAll(){
+            working.innerHTML = "Z = ";
+            parallelSum(document.getElementById('circuit'),false);
+            working.innerHTML += "<br>" + document.getElementById('circuit').querySelector(':scope > #output').innerHTML;
+        }
+        function sum(e){
+            working.innerHTML += "( ";
+            let sumA = 0;
+            let sumB = 0;
+            var elements = e.querySelectorAll(':scope > div');            
+            for (let i=0; i<elements.length; i++){
+                switch(elements[i].id){
+                    case 'resistor':
+                        let r = elements[i].querySelector('#r').value;
+                        if(r!=""){
+                            sumA += parseFloat(r);
+                            working.innerHTML += i>1? add(r)+" " : r+" ";
+                        }
+                        break;
+                    case 'inductor':
+                        let L = elements[i].querySelector('#L') .value;
+                        if (L!=""){
+                            sumB += parseFloat(L)*0.001*w;
+                            working.innerHTML += i>1? add(parseFloat(L)*0.001)+"*"+w+"j " : parseFloat(L)*0.001+"*"+w+"j "
+                        }
+                        break;
+                    case 'capacitor':
+                        let c = elements[i].querySelector('#c') .value;
+                        if (c!=""){
+                            sumB -= 1/(parseFloat(c)*0.000000001*w);
+                            working.innerHTML += "-1/("+sigfig(parseFloat(c)*0.000000001)+"*"+w+")j ";
+                        }
+                        break;
+                    case 'parallel':
+                        working.innerHTML += "<br>+";
+                        parallelSum(elements[i]);
+                        let backendData = elements[i].querySelector(':scope > #output').querySelector('.backend').querySelectorAll('span');
+                        sumA += parseFloat(backendData[0].textContent);
+                        sumB += parseFloat(backendData[1].textContent);
+                        break;
+                }
+            }
+            working.innerHTML += ")";
+            let ma = toPhasor(sumA,sumB);
+            e.querySelector(":scope > #output").innerHTML = "Z = "+sigfig(sumA)+" "+add(sigfig(sumB))+"j = "+angle(ma)
+            +"<p class='backend'>"
+                +"<span id='A'>"+sumA+"</span>"
+                +"<span id='B'>"+sumB+"</span>"
+                +"</p>";
+        }
+        function parallelSum(e,nf=true){
+            working.innerHTML += nf? "(" : "";
+            let invSumRe = 0;
+            let invSumIm = 0;
+            var series = e.querySelectorAll(':scope > div#series');
+            for (let i=0; i<series.length; i++){
+                working.innerHTML += i>0? "||" : "";
+                sum(series[i]);
+                let backendData = series[i].querySelector(':scope > #output').querySelector('.backend').querySelectorAll('span');
+                let invSeries = complexInv(parseFloat(backendData[0].textContent),parseFloat(backendData[1].textContent));
+                invSumRe += invSeries[0];
+                invSumIm += invSeries[1];
+            }
+            working.innerHTML += nf? ")" : "";
+            let invSum = complexInv(invSumRe, invSumIm);
+            let sumA = invSum[0];
+            let sumB = invSum[1];
+            let ma = toPhasor(sumA,sumB);
+            if (isNaN(sumA)){
+                e.querySelector(":scope > #output").innerHTML = "Z = 0";
+                return;
+            }
+            e.querySelector(":scope > #output").innerHTML = "Z = "+sigfig(sumA)+" "+add(sigfig(sumB))+"j = "+angle(ma)
+            +"<p class='backend'>"
+                +"<span id='A'>"+sumA+"</span>"
+                +"<span id='B'>"+sumB+"</span>"
+                +"</p>";
+        }
+        function sigfig(num, sf=4){
+            let output = parseFloat(num.toPrecision(sf));
+            return output;
+        }
+        function add(num){
+            return num >= 0 ? "+ "+num : "- "+(-num);
+        }
+        function angle(ma){
+            if (isNaN(ma[1])){
+                return ma[0];
+            }
+            return sigfig(ma[0])+" ∠ "+sigfig(ma[1])+"°";
+        }
+        function toPhasor(A,B){
+            let m = Math.sqrt(A*A+B*B);
+            let angle = Math.atan(B/A)/Math.PI*180;
+            return [m,angle];
+        }
+        function complexInv(Re,Im){
+            let denominator = Re*Re + Im*Im;
+            return [Re/denominator,-Im/denominator];
+        }
+    </script>
+</html>
