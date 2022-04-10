@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <style>
+            #workingbox {
+                border-style: solid;
+                height: fit-content;
+                width: fit-content;                
+                text-align: center;
+                margin: auto;
+                margin-top: 10px;
+                margin-bottom: 10px;
+                padding: 10px;
+            }
+        </style>
+    </head>
+    <body style="text-align: center;">
+        <h2>R Critical Calculation</h2>
+        <div>
+            <form id="entries" oninput="workout()">
+                <label for="R">R_crit(Ohm)</label>
+                <input type='number' id='R'>
+                <label for="L">L(mH)</label>
+                <input type='number' id='L'>
+                <label for="C">C(nF)</label>
+                <input type='number' id='C'>
+            </form>
+        </div>
+        <h3>Working Out</h3>
+        <div id="workingbox" style='border-color:gray;'>
+            <span id='working'></span>
+        </div>
+    </body>
+    <script>
+        var working = document.getElementById('working');
+        function workout(){
+            let R = parseFloat(document.getElementById('R').value);
+            let L = parseFloat(document.getElementById('L').value)*0.001;
+            let C = parseFloat(document.getElementById('C').value)*0.000000001;
+            let nanCount=isNaN(R)+2*isNaN(L)+3*isNaN(C);
+            switch(nanCount){
+                case 0:
+                    document.getElementById('entries').reset();
+                    working.innerHTML = "Reset!";
+                    break;
+                case 1:
+                    //Resistor
+                    working.innerHTML = "Resistor<br><br>Series:<br>R_crit = 2 * sqrt(L/C)<br>= 2 * sqrt("+sigfig(L)+"/"+sigfig(C)+") = "+sigfig(2*Math.sqrt(L/C)) + " Ohms<br><br>Parallel:<br>R_crit = 0.5 * sqrt(L/C)<br>= 0.5 * sqrt("+sigfig(L)+"/"+sigfig(C)+") = "+sigfig(0.5*Math.sqrt(L/C)) + " Ohms";
+                    break;
+                case 2:
+                    //Inductor
+                    working.innerHTML = "Inductor<br><br>Series:<br>L = C*(R_crit/2)^2 = <br>= "+sigfig(C)+"*("+R+"/2)^2 = "+sigfig(C*(R*R/4)*1000) + " mH<br><br>Parallel:<br>L = C*(R_crit*2)^2 = <br>= "+sigfig(C)+"*("+R+"*2)^2 = "+sigfig(C*(R*R*4)*1000) + " mH";
+                    break;
+                case 3:
+                    //Capacitor
+                    working.innerHTML = "Capacitor<br><br>Series:<br>L = L/(R_crit/2)^2 = <br>= "+sigfig(L)+"/("+R+"/2)^2 = "+sigfig(L/(R*R/4)*1000000000) + " nF<br><br>Parallel:<br>L = L/(R_crit*2)^2 = <br>= "+sigfig(L)+"/("+R+"*2)^2 = "+sigfig(L/(R*R*4)*1000000000) + " nF"
+                    break;
+            }
+        }
+        function sigfig(num, sf=4){
+            let output = parseFloat(num.toPrecision(sf));
+            return output;
+        }
+        function add(num){
+            return num >= 0 ? "+ "+num : "- "+(-num);
+        }
+        function angle(ma){
+            if (isNaN(ma[1])){
+                return ma[0];
+            }
+            return sigfig(ma[0])+" ∠ "+sigfig(ma[1])+"°";
+        }
+        function toPhasor(A,B){
+            let m = Math.sqrt(A*A+B*B);
+            let angle = Math.atan(B/A)/Math.PI*180;
+            return [m,angle];
+        }
+        function complexInv(Re,Im){
+            let denominator = Re*Re + Im*Im;
+            return [Re/denominator,-Im/denominator];
+        }
+    </script>
+</html>

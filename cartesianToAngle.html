@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <style>
+            #workingbox {
+                border-style: solid;
+                height: fit-content;
+                width: fit-content;                
+                text-align: center;
+                margin: auto;
+                margin-top: 10px;
+                margin-bottom: 10px;
+            }
+        </style>
+    </head>
+    <body style="text-align: center;">
+        <h2>Cartesian to Angle</h2>
+        <div>
+            <form oninput="workout()">
+                (
+                <input type='number' id='Re0'>
+                +
+                <input type='number' id='Im0'>
+                j)<br>
+                /<br>
+                (
+                <input type='number' id='Re1'>
+                +
+                <input type='number' id='Im1'>
+                j)
+            </form>
+        </div>
+        <h3>Working Out</h3>
+        <div id="workingbox" style='border-color:gray;'>
+            <span id='working'></span>
+        </div>
+    </body>
+    <script>
+        var working = document.getElementById('working');
+        function workout(){
+            let Re0 = parseFloat(document.getElementById('Re0').value);
+            let Im0 = parseFloat(document.getElementById('Im0').value);
+            let Re1 = parseFloat(document.getElementById('Re1').value);
+            let Im1 = parseFloat(document.getElementById('Im1').value);
+            working.innerHTML = "("+Re0+" "+add(Im0)+"j)/("+Re1+" "+add(Im1)+"j)<br>";
+            let denominator = Re1*Re1 + Im1*Im1;
+            working.innerHTML += "= ("+Re0+" "+add(Im0)+"j)("+Re1+" "+add(-Im1)+"j)/(("+Re1+")^2 + ("+Im1+")^2)<br>";
+            let Re = (Re0*Re1+Im0*Im1)/denominator;
+            let Im = (Im0*Re1 - Im1*Re0)/denominator;
+            working.innerHTML += "= "+sigfig(Re)+" + "+sigfig(Im)+"j<br>";
+            working.innerHTML += "= "+angle(toPhasor(Re,Im));
+        }
+        function sigfig(num, sf=4){
+            let output = parseFloat(num.toPrecision(sf));
+            return output;
+        }
+        function add(num){
+            return num >= 0 ? "+ "+num : "- "+(-num);
+        }
+        function angle(ma){
+            if (isNaN(ma[1])){
+                return ma[0];
+            }
+            return sigfig(ma[0])+" ∠ "+sigfig(ma[1])+"°";
+        }
+        function toPhasor(A,B){
+            let m = Math.sqrt(A*A+B*B);
+            let angle = Math.atan(B/A)/Math.PI*180;
+            return [m,angle];
+        }
+        function complexInv(Re,Im){
+            let denominator = Re*Re + Im*Im;
+            return [Re/denominator,-Im/denominator];
+        }
+    </script>
+</html>
