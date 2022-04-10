@@ -35,9 +35,10 @@
         <h3>Information</h3>
         <ul>
             <li>Filling in 2 of the fields will trigger the calculation of the third value</li>
-            <li>Filling in all fields will calculate Damping Ratio and Quality Factor then determine what kind of damping occurred, R_crit will be treated as resistance</li>
+            <li>Filling in all fields will calculate Damping Ratio, Quality Factor and Damping Constant then determine what kind of damping occurred, R_crit will be treated as resistance</li>
             <li>Use series if 2ODE in terms of i, parallel if in terms of v</li>
         </ul>
+        <a href="index.html">Back to tools list</a>
     </body>
     <script>
         var working = document.getElementById('working');
@@ -51,7 +52,7 @@
                     //Damping Ratio & Q Factor
                     let Qseries = 1/R*Math.sqrt(L/C);
                     let Qparallel = R*Math.sqrt(C/L);
-                    working.innerHTML = "Damping Ratio<br><br>Series:<br>ζ = R/2 * sqrt(C/L)<br>= "+R+"/2 * sqrt("+sigfig(C)+"/"+sigfig(L)+") = "+sigfig(R/2*Math.sqrt(C/L))+"<br><br>Parallel:<br>ζ = 1/(2R) * sqrt(L/C)<br>= 1/(2"+R+") * sqrt("+sigfig(L)+"/"+sigfig(C)+") = "+sigfig(1/R/2*Math.sqrt(L/C))+"<br><br><br>Q Factor<br><br>Series(i):<span style='"+(Qseries<.5?"color:red'>(Overdamped":sigfig(Qseries)==.5?"color:green'>(Critically Damped":"color:blue'>(Underdamped")+")</span><br>Q = 1/R * sqrt(L/C)<br>= 1/"+R+" * sqrt("+sigfig(L)+"/"+sigfig(C)+") = "+sigfig(Qseries)+"<br><br>Parallel(v):<span style='"+(Qparallel<.5?"color:red'>(Overdamped":sigfig(Qparallel)==.5?"color:green'>(Critically Damped":"color:blue'>(Underdamped")+")</span><br>Q = R * sqrt(C/L)<br>= "+R+" * sqrt("+sigfig(C)+"/"+sigfig(L)+") = "+sigfig(Qparallel);
+                    working.innerHTML = "Damping Ratio<br><br>Series(i):<br>ζ = R/2 * sqrt(C/L)<br>= "+R+"/2 * sqrt("+sigfig(C)+"/"+sigfig(L)+") = "+sigfig(R/2*Math.sqrt(C/L),3)+"<br><br>Parallel(v):<br>ζ = 1/(2R) * sqrt(L/C)<br>= 1/(2"+R+") * sqrt("+sigfig(L)+"/"+sigfig(C)+") = "+sigfig(1/R/2*Math.sqrt(L/C),3)+"<br><br><br>Q Factor<br><br>Series(i):<span style='"+(Qseries<.5?"color:red'>(Overdamped":sigfig(Qseries)==.5?"color:green'>(Critically Damped":"color:blue'>(Underdamped")+")</span><br>Q = 1/R * sqrt(L/C)<br>= 1/"+R+" * sqrt("+sigfig(L)+"/"+sigfig(C)+") = "+sigfig(Qseries,3)+"<br><br>Parallel(v):<span style='"+(Qparallel<.5?"color:red'>(Overdamped":sigfig(Qparallel)==.5?"color:green'>(Critically Damped":"color:blue'>(Underdamped")+")</span><br>Q = R * sqrt(C/L)<br>= "+R+" * sqrt("+sigfig(C)+"/"+sigfig(L)+") = "+sigfig(Qparallel,3)+"<br><br><br>Damping Constant<br><br>Series(i):<br>α = 1/(2R*C) = 1/(2"+R+"*"+sigfig(C)+") = "+sigfig(1/2/R/C,3)+"<br><br>Parallel(v):<br>α = R/(2L) = "+R+"/(2*"+sigfig(L)+") = "+sigfig(R/2/L,3);
                     break;
                 case 1:
                     //Resistor
