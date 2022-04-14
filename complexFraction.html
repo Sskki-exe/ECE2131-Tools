@@ -17,6 +17,12 @@
         <h2>Complex Fraction</h2>
         <div>
             <form oninput="workout()">
+                <label for='realSync'>Syn Real Part</label>
+                <input type="checkbox" id='realSync'>&nbsp;&nbsp;
+                <label for='imSync'>Sync Imaginary Part</label>
+                <input type="checkbox" id='imSync'>
+                <button type="reset">Reset</button><br><br>
+
                 (
                 <input type='number' id='Re0'>
                 +
@@ -34,6 +40,11 @@
         <div id="workingbox" style='border-color:gray;'>
             <span id='working'></span>
         </div>
+        <br><br><br>
+        <h3>Information</h3>
+        <ul>
+            <li>The sync checkboxes at the top will set the denominator's real and imaginary parts to the same value as the numerator's, respectly. This is for trial and error purposes</li>
+        </ul>
         <a href="index.html">Back to tools list</a>
     </body>
     <script>
@@ -41,9 +52,11 @@
         function workout(){
             let Re0 = parseFloat(document.getElementById('Re0').value);
             let Im0 = parseFloat(document.getElementById('Im0').value);
-            let Re1 = parseFloat(document.getElementById('Re1').value);
-            let Im1 = parseFloat(document.getElementById('Im1').value);
+            let Re1 = document.getElementById('realSync').checked ? Re0 : parseFloat(document.getElementById('Re1').value);
+            let Im1 = document.getElementById('imSync').checked ? Im0 : parseFloat(document.getElementById('Im1').value);
             working.innerHTML = "("+Re0+" "+add(Im0)+"j)/("+Re1+" "+add(Im1)+"j)<br>";
+            document.getElementById('Re1').value = Re1;
+            document.getElementById('Im1').value = Im1;
             let denominator = Re1*Re1 + Im1*Im1;
             working.innerHTML += "= ("+Re0+" "+add(Im0)+"j)("+Re1+" "+add(-Im1)+"j)/(("+Re1+")^2 + ("+Im1+")^2)<br>";
             let Re = (Re0*Re1+Im0*Im1)/denominator;
