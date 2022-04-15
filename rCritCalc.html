@@ -14,7 +14,7 @@
             }
         </style>
     </head>
-    <body style="text-align: center;">
+    <body style="text-align: center;" onload="resetFQBW();document.getElementById('resonanceCalc').reset();">
         <h2>R Critical, Damping Ratio & Q Factor Calculation</h2>
         <div>
             <form oninput="workout()">
@@ -37,21 +37,30 @@
             <span id='working'></span>
         </div><hr>
         <h2>Resonance Calculation</h2>
-        <div><form name="frequency">
+        <div><form id="resonanceCalc">
             <label for="Q">Quality Factor</label>
             <input type='number' id='Q' oninput="setQ(this.value);workout1()">
-            <button type="reset">Reset</button><br><br>
+            <button type="reset" onclick="resetFQBW()">Reset</button><br><br>
             Frequency<br>
             <label for='f'>(rad/s):</label>
-            <input type='number' id='f' oninput='setF(this.value);workout1()'>
+            <input  type='number' id='f' oninput='setF(this.value);workout1()'>
             <label for='deg'>(°/s):</label>
-            <input type='number' id='deg' oninput='setdeg(this.value);workout1()'>
+            <input  type='number' id='deg' oninput='setdeg(this.value);workout1()'>
             <label for='Hz'>(Hz):</label>
-            <input type='number' id='Hz' oninput='setHz(this.value);workout1()'>
+            <input  type='number' id='Hz' oninput='setHz(this.value);workout1()'><br><br>
+            Bandwidth<br>
+            <label for='BW'>(rad/s):</label>
+            <input type='number' id='BW' oninput='setF(this.value,true);workout1()'>
+            <label for='degBW'>(°/s):</label>
+            <input type='number' id='degBW' oninput='setdeg(this.value,true);workout1()'>
+            <label for='HzBW'>(Hz):</label>
+            <input type='number' id='HzBW' oninput='setHz(this.value,true);workout1()'>
         </form>
         <h3>Working Out</h3>
         <div id="workingbox" style='border-color:gray;'>
-            <span id='working2'></span>
+            <span id="fCalc"></span>
+            <span id="BWCalc"></span>
+            <span id='working1'></span>
         </div>
         <br><br><br>
         <h3>Information</h3>
@@ -66,9 +75,8 @@
     </body>
     <script>
         var working = document.getElementById('working');
-        var working1 = document.getElementById('working2');
-        var f;
-        var Q;
+        var working1 = document.getElementById('working1');
+        var f, BW, Q;
 
         function getCircuitType(){
             let circuitRadio = document.querySelectorAll('input[name="circuitType"]');
@@ -95,7 +103,7 @@
                         working.innerHTML += "Damping Ratio<br><br>ζ = 1/(2R) * sqrt(L/C)<br>= 1/(2"+R+") * sqrt("+sigfig(L)+"/"+sigfig(C)+") = "+sigfig(1/R/2*Math.sqrt(L/C),3)+"<br><br>Q Factor <span style='"+(Q<.5?"color:red'>(Overdamped":sigfig(Q)==.5?"color:green'>(Critically Damped":"color:blue'>(Underdamped")+")</span><br>Q = R * sqrt(C/L)<br>= "+R+" * sqrt("+sigfig(C)+"/"+sigfig(L)+") = "+sigfig(Q,3)+"<br><br><br>Damping Constant<br><br>α = 1/(2R*C) = 1/(2"+R+"*"+sigfig(C)+") = "+sigfig(1/2/R/C,3);
                     }
                     document.getElementById('Q').value = sigfig(Q);
-                    workout2();
+                    workout1();
                     break;
                 case 1:
                     //Resistor
@@ -123,30 +131,78 @@
                     break;
             }
         }
-        function setF(val){
+        function setF(val,isBW=false){
+            if(isBW){
+                BW = parseFloat(val);
+                document.getElementById("BWCalc").innerHTML = "";
+                document.getElementById("degBW").value = sigfig(BW/Math.PI*180);
+                document.getElementById("HzBW").value = sigfig(BW/2/Math.PI);
+                return;
+            }
             f = parseFloat(val);
-            working1.innerHTML = "";
+            document.getElementById("fCalc").innerHTML = "";
             document.getElementById("deg").value = sigfig(f/Math.PI*180);
             document.getElementById("Hz").value = sigfig(f/2/Math.PI);
         }
-        function setdeg(val){
+        function setdeg(val,isBW=false){
+            if(isBW){
+                BW = parseFloat(val)/180*Math.PI;
+                document.getElementById("BWCalc").innerHTML = "<p>BW = "+val+"°/s = "+sigfig(BW)+"rad/s</p>";
+                document.getElementById("BW").value = sigfig(BW);
+                document.getElementById("HzBW").value = sigfig(BW/2/Math.PI);
+                return;
+            }
             f = parseFloat(val)/180*Math.PI;
-            working1.innerHTML = "<p>f = "+val+"°/s = "+sigfig(f)+"rad/s</p>";
+            document.getElementById("fCalc").innerHTML = "<p>f = "+val+"°/s = "+sigfig(f)+"rad/s</p>";
             document.getElementById("f").value = sigfig(f);
             document.getElementById("Hz").value = sigfig(f/2/Math.PI);
         }
-        function setHz(val){
+        function setHz(val,isBW=false){
+            if(isBW){
+                BW = parseFloat(val)*2*Math.PI;
+                document.getElementById("BWCalc").innerHTML = "<p>BW = 2π*"+val+"Hz = "+sigfig(BW)+"rad/s</p>";
+                document.getElementById("BW").value = sigfig(BW);
+                document.getElementById("degBW").value = sigfig(BW/Math.PI*180);
+                return;
+            }
             f = parseFloat(val)*2*Math.PI;
-            working1.innerHTML = "<p>f = 2π*"+val+"Hz = "+sigfig(f)+"rad/s</p>";
+            document.getElementById("fCalc").innerHTML = "<p>f = 2π*"+val+"Hz = "+sigfig(f)+"rad/s</p>";
             document.getElementById("f").value = sigfig(f);
             document.getElementById("deg").value = sigfig(f/Math.PI*180);
         }
         function setQ(val){
             Q = parseFloat(val);
         }
+        function resetFQBW(){
+            f = NaN;
+            Q = NaN;
+            BW = NaN;
+        }
         function workout1(){
-            let BW = f/Q;
-            working1.innerHTML += "Resonance Bandwidth<br><br>BW = f/Q = " + sigfig(f) + "/" + sigfig(Q) + "<br>= " + sigfig(BW) + " rad/s<br>= " + sigfig(BW/Math.PI*180) + "°/s<br>= " + sigfig(BW/2/Math.PI) + " Hz";
+            let nanCount = isNaN(Q)+isNaN(f)*2+isNaN(BW)*3;            
+            switch(nanCount){
+                case 0:
+                    // Clear
+                    console.log("clear!")
+                    document.getElementById('resonanceCalc').reset();
+                    resetFQBW();
+                    break;
+                case 1:
+                    // Q
+                    let Qout = f/BW;
+                    working1.innerHTML = "Q Factor<br><br>Q = f/BW = " + sigfig(f) + "/" + sigfig(BW) + "<br>= " + sigfig(Qout);
+                    break;
+                case 2:
+                    // f
+                    let fout = Q*BW;
+                    working1.innerHTML = "Applied Frequency<br><br>f = Q*BW = " + sigfig(Q) + "*" + sigfig(BW) + "<br>= " + sigfig(fout) + " rad/s<br>= " + sigfig(fout/Math.PI*180) + "°/s<br>= " + sigfig(fout/2/Math.PI) + " Hz";
+                    break;
+                case 3:
+                    // BW
+                    let BWout = f/Q;
+                    working1.innerHTML = "Resonance Bandwidth<br><br>BW = f/Q = " + sigfig(f) + "/" + sigfig(Q) + "<br>= " + sigfig(BWout) + " rad/s<br>= " + sigfig(BWout/Math.PI*180) + "°/s<br>= " + sigfig(BWout/2/Math.PI) + " Hz";
+                    break;
+            }
         }
         function sigfig(num, sf=4){
             let output = parseFloat(num.toPrecision(sf));
