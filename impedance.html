@@ -11,6 +11,9 @@
                 margin-top: 10px;
                 margin-bottom: 10px;
             }
+            #workingbox, #circuit {
+                border-color:gray;
+            }
             #series {
                 border-top: 0;
                 border-bottom: 0;
@@ -36,7 +39,7 @@
     <body onload="init()" style="text-align: center;">
         <h2>Impedance, Voltage & Current Calculator</h2>
         <h3>(Circuit Analysis)</h3>
-        <div>        
+        <div>
             <label for='w'>w(rad/s):</label>
             <input type='number' id='w' oninput='setW(this.value);sumAll()'><br>
             <label for='degW'>w(degrees/s):</label>
@@ -47,8 +50,9 @@
                 <option value="v">Voltage</option>
                 <option value="c">Current</option></select> Source(<span id='sourceUnits'>V</span>)
             <input type='number' id='sVal' oninput='setSVal(this.value);sumAll()'>
+            ∠ <input type='number' id='pShift' oninput='setPShift(this.value);sumAll()'>°
         </div>  
-        <div id='circuit' style='border-color:gray;'>
+        <div id='circuit'>
             <span id='output'>Z = 0<br>V = ...<br>I = ...</span>
             <div>
                 <span class='backend'>Red</span>                
@@ -56,11 +60,11 @@
             </div>
         </div>
         <h3>Working Out</h3>
-        <div id="workingbox" style='border-color:gray;'>
+        <div id="workingbox">
             <span id="wCalc"></span>
             <span id='working'></span>
             <span id='working2'></span>
-        </div><hr>
+        </div><hr style="color: black;">
         <h2>Complex Addition</h2>
         <form oninput="workout()">
             (
@@ -75,12 +79,17 @@
             <input type='number' id='addRe2'>
             +
             <input type='number' id='addIm2'>
-            j)<button onclick='copyRow(1,2)' type='button'>Copy to 2nd row</button>
+            j)<button onclick='copyRow(1,2);workout()' type='button'>Copy to 2nd row</button>
         </form>
+        <div id="workingbox">
+            <span id='working3'></span>
+        </div>
         <br><br><br>
         <h3>Information</h3>
         <ul>
+            <li></li>
             <li>Checkboxes will highlight relevant sections of the total impedance calculations and/or generate impedance, voltage and current calculations</li>
+            <li>Checkboxes will also load the voltage of the last component selected (closest to screen bottom) to the first value of the complex addition calculator this is so that the effect of multiple sources can be summed</li>
             <li>Current from source is considered clockwise</li>
             <li>Elements in Series have vertical borders of the same color</li>
             <li>Elements in Parallel have black horiztonal borders</li>
@@ -89,13 +98,20 @@
         <a href="index.html">Back to tools list</a>
     </body>
     <script>
+        // Boxes for working out
         var working = document.getElementById('working');
         var working2 = document.getElementById('working2');
-        var w = 1.0;
-        var isVSource = true;
-        var sourceVal;
+        // Source variables
+        var w = 1.0;            // Freq
+        var isVSource = true;   // Voltage or current source
+        var sourceVal;          // Voltage/Amperage
+        var pShift;             // Phase shift of source
+        // Color list to cycle through for different groups of series
         var colors = ["Red","Cyan","Blue","DarkBlue","LightBlue","Purple","Yellow","Lime","Magenta","Orange","Brown","Maroon","Green","Olive"];
-        var cInt = 0;
+        var cInt = 0;   // Index to cycle through colors
+        /**
+         * Converting Frequency between forms
+        **/ 
         function setW(val){
             w = parseFloat(val);
             document.getElementById("wCalc").innerHTML = "";
@@ -114,6 +130,9 @@
             document.getElementById("w").value = sigfig(w);
             document.getElementById("degW").value = sigfig(w/Math.PI*180);
         }
+        /**
+         * Setting source voltage
+        **/
         function setSType(val){
             isVSource = val=='v'?true : val=='c'?false : isVSource;
             document.getElementById('sourceUnits').innerHTML = isVSource?'V':'A';
@@ -121,6 +140,12 @@
         function setSVal(val){
             sourceVal = parseFloat(val);
         }
+        function setPShift(val){
+            pShift = parseFloat(val);
+        }
+        /**
+         * Adding new inputs
+        **/ 
         function addParallel(e){
             cInt = cInt+1 > colors.length ? 0 : cInt+1;
             e.parentElement.outerHTML += "<div id='parallel' style='border-color:black'><span id='output'>Z = 0<br>V = ...<br>I = ...</span><div><span class='backend'>"+colors[cInt]+"</span><input type='checkbox' id='toOutput' onclick='sumAll()'><button onclick='addSeries(this)' type='button'>Add Series</button><button onclick='this.parentElement.parentElement.remove();sumAll()' type='button'>X</button></div></div>";
@@ -128,14 +153,6 @@
         function addSeries(e){
             let color = e.parentElement.querySelector('.backend').textContent;
             e.parentElement.outerHTML += "<div id='series' style='border-color:"+color+";'><div id='controls'><input type='checkbox' id='toOutput' onclick='sumAll()'><button onclick='addResistor(this)' type='button'>Add Resistor</button><button onclick='addInductor(this)' type='button'>Add Inductor</button><button onclick='addCapacitor(this)' type='button'>Add Capacitor</button><button onclick='addParallel(this)' type='button'>Add Parallel</button><button onclick='this.parentElement.parentElement.remove();sumAll()' type='button'>X</button></div><span id='output' style='color:"+color+"'>Z = 0</span></div>";
-        }
-        function init(){    
-            colorI = 0;
-            document.getElementById("w").value = 1000;
-            setW(1000);
-            document.getElementById("sType").value = "v";
-            document.getElementById("sVal").value = 5;
-            setSVal(5)
         }
         function addResistor(e){
             e.parentElement.outerHTML += "<div id='resistor'><input type='checkbox' id='toOutput' onclick='sumAll()'><label for='r'>Resistor(Ohm):</label><input type='number' id='r' oninput='sumAll();'><button onclick='this.parentElement.remove();sumAll()' type='button'>X</button><p class='backend'></p></div>";
@@ -146,6 +163,22 @@
         function addCapacitor(e){
             e.parentElement.outerHTML += "<div id='capacitor'><input type='checkbox' id='toOutput' onclick='sumAll()'><label for='c'>Capacitor(nF):</label><input type='number' id='c' oninput='sumAll();'><button onclick='this.parentElement.remove();sumAll()' type='button'>X</button><p class='backend'></p></div>";
         }
+        /**
+         * Reset everything
+        **/
+        function init(){    
+            colorI = 0;
+            document.getElementById("w").value = 1000;
+            setW(1000);
+            setPShift(0);
+            document.getElementById("sType").value = "v";
+            document.getElementById("sVal").value = 5;
+            document.getElementById("pShift").value = 0;
+            setSVal(5)
+        }
+        /**
+         * Calculating impedances
+        **/
         function sumAll(){
             working.innerHTML = "Total Z = ";
             working2.innerHTML = "";
@@ -231,11 +264,15 @@
                 +"<span id='B'>"+sumB+"</span>"
                 +"</p>";
         }
+        /**
+         * Calculating Voltages and Currents
+        **/
         function voltAll(){
             let temp = document.getElementById('output').querySelector('.backend');
             let A = parseFloat(temp.querySelector('#A').innerHTML);
             let B = parseFloat(temp.querySelector('#B').innerHTML);
-            let voltage = isVSource?[sourceVal,0]:complexMult([sourceVal,0],[A,B]);
+            let tempV = toCartesian(sourceVal,pShift);
+            let voltage = isVSource?tempV:complexMult(tempV,[A,B]);
             parallelVolt(document.getElementById('circuit'),voltage);
         }
         function volt(e,voltage){
@@ -258,6 +295,8 @@
                             working2.innerHTML += "<div id='workingbox'><u><b>"+elements[i].id+"</u></b><br>Z = "+complexString(compZ)+ "<br><br>V = ("+complexString(voltage,false)+")*("+complexString(compZ,false)+")/("+complexString(sumZ,false)+")<br>  = "+complexString(compV)+"<br><br>I = V/Z<br>  = "+complexString(complexFrac(compV,compZ))+"</div>";
                             document.getElementById('addRe0').value = compV[0];
                             document.getElementById('addIm0').value = compV[1];
+                            document.getElementById('addRe1').value = "";
+                            document.getElementById('addIm1').value = "";
                         }
                         break;
                     case 'parallel':
@@ -293,6 +332,9 @@
                 +"<span id='I1'>"+current[1]+"</span>"
                 +"</p>";
         }
+        /**
+         * Complex number manipulation
+        **/
         function complexString(number,eq=true){
             return eq?sigfig(number[0])+" "+add(sigfig(number[1]))+"j = "+angle(toPhasor(number[0],number[1])):sigfig(number[0])+" "+add(sigfig(number[1]))+"j";
         }
@@ -315,6 +357,23 @@
             }
             return [Re0*Re1-Im0*Im1, Re0*Im1+Re1*Im0];
         }
+        function toPhasor(A,B){
+            let m = Math.sqrt(A*A+B*B);
+            let angle = Math.atan(B/A)/Math.PI*180;
+            return [m,angle];
+        }
+        function toCartesian(m,angle){
+            let A = m*Math.cos(angle/180*Math.PI);
+            let B = m*Math.sin(angle/180*Math.PI);
+            return [A,B];
+        }
+        function complexInv(Re,Im){
+            let denominator = Re*Re + Im*Im;
+            return [Re/denominator,-Im/denominator];
+        }
+        /**
+         * Formatting to strings
+        **/
         function sigfig(num, sf=4){
             let output = parseFloat(num.toPrecision(sf));
             return output;
@@ -325,15 +384,9 @@
         function angle(ma){
             return sigfig(ma[0])+" ∠ "+sigfig(ma[1])+"°";
         }
-        function toPhasor(A,B){
-            let m = Math.sqrt(A*A+B*B);
-            let angle = Math.atan(B/A)/Math.PI*180;
-            return [m,angle];
-        }
-        function complexInv(Re,Im){
-            let denominator = Re*Re + Im*Im;
-            return [Re/denominator,-Im/denominator];
-        }
+        /**
+         * Complex Addition logic
+        **/
         function copyRow(i0,i1){
             let Re0 = document.getElementById('addRe0'),
             Re1 = document.getElementById('addRe1'),
@@ -399,6 +452,7 @@
             Im2 = document.getElementById('addIm2');
             Re2.value = parseFloat(Re0.value) + parseFloat(Re1.value);
             Im2.value = parseFloat(Im0.value) + parseFloat(Im1.value);
+            document.getElementById('working3').innerHTML += "<div id='workingbox'>"+sigfig(parseFloat(Re0.value))+" "+add(sigfig(parseFloat(Im0.value)))+"j<br>+ "+sigfig(parseFloat(Re1.value))+" "+add(sigfig(parseFloat(Im1.value)))+"j<br>= "+sigfig(parseFloat(Re2.value))+" "+add(sigfig(parseFloat(Im2.value)))+"j<br><button onclick='this.parentElement.remove();sumAll()' type='button'>Delete</button></div>";
         }
     </script>
 </html>
