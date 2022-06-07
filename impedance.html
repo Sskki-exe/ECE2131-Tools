@@ -60,7 +60,23 @@
             <span id="wCalc"></span>
             <span id='working'></span>
             <span id='working2'></span>
-        </div>
+        </div><hr>
+        <h2>Complex Addition</h2>
+        <form oninput="workout()">
+            (
+            <input type='number' id='addRe0'>
+            +
+            <input type='number' id='addIm0'>
+            j)<br><br>+(
+            <input type='number' id='addRe1'>
+            +
+            <input type='number' id='addIm1'>
+            j)<br><br>=(
+            <input type='number' id='addRe2'>
+            +
+            <input type='number' id='addIm2'>
+            j)<button onclick='copyRow(1,2)' type='button'>Copy to 2nd row</button>
+        </form>
         <br><br><br>
         <h3>Information</h3>
         <ul>
@@ -230,8 +246,7 @@
                 +"<span id='V1'>"+voltage[1]+"</span>"
                 +"</p>"+currentCalc(voltage,sumZ);
             var elements = e.querySelectorAll(':scope > div');            
-            for (let i=0; i<elements.length; i++){
-                
+            for (let i=0; i<elements.length; i++){                
                 switch(elements[i].id){
                     case 'resistor':
                     case 'inductor':
@@ -240,7 +255,9 @@
                             let temp0 = elements[i].querySelector(":scope > .backend");
                             let compZ = [parseFloat(temp0.querySelector("#A").innerHTML),parseFloat(temp0.querySelector("#B").innerHTML)];
                             let compV = complexFrac(complexMult(voltage,compZ),sumZ);
-                            working2.innerHTML += "<div id='workingbox'><u><b>"+elements[i].id+"</u></b><br>Z = "+complexString(compZ)+ "<br><br>V = ("+complexString(voltage,false)+")*("+complexString(compZ,false)+")/("+complexString(sumZ,false)+")<br>  = "+complexString(compV)+"<br><br>I = V/Z<br>  = "+complexString(complexFrac(compV,compZ))+"</div>"; 
+                            working2.innerHTML += "<div id='workingbox'><u><b>"+elements[i].id+"</u></b><br>Z = "+complexString(compZ)+ "<br><br>V = ("+complexString(voltage,false)+")*("+complexString(compZ,false)+")/("+complexString(sumZ,false)+")<br>  = "+complexString(compV)+"<br><br>I = V/Z<br>  = "+complexString(complexFrac(compV,compZ))+"</div>";
+                            document.getElementById('addRe0').value = compV[0];
+                            document.getElementById('addIm0').value = compV[1];
                         }
                         break;
                     case 'parallel':
@@ -316,6 +333,72 @@
         function complexInv(Re,Im){
             let denominator = Re*Re + Im*Im;
             return [Re/denominator,-Im/denominator];
+        }
+        function copyRow(i0,i1){
+            let Re0 = document.getElementById('addRe0'),
+            Re1 = document.getElementById('addRe1'),
+            Re2 = document.getElementById('addRe2'),
+            Im0 = document.getElementById('addIm0'),
+            Im1 = document.getElementById('addIm1'),
+            Im2 = document.getElementById('addIm2');
+            switch(i0){
+                case 0:
+                    switch(i1){
+                        case 0:
+                            Re0.value = Re0.value;
+                            Im0.value = Im0.value;
+                            break;
+                        case 1:
+                            Re0.value = Re1.value;
+                            Im0.value = Im1.value;
+                            break;
+                        case 2:
+                            Re0.value = Re2.value;
+                            Im0.value = Im2.value;
+                            break;
+                    } break;
+                case 1:
+                    switch(i1){
+                        case 0:
+                            Re1.value = Re0.value;
+                            Im1.value = Im0.value;
+                            break;
+                        case 1:
+                            Re1.value = Re1.value;
+                            Im1.value = Im1.value;
+                            break;
+                        case 2:
+                            Re1.value = Re2.value;
+                            Im1.value = Im2.value;
+                            break;
+                    } break;
+                case 2:
+                    switch(i1){
+                        case 0:
+                            Re2.value = Re0.value;
+                            Im2.value = Im0.value;
+                            break;
+                        case 1:
+                            Re2.value = Re1.value;
+                            Im2.value = Im1.value;
+                            break;
+                        case 2:
+                            Re2.value = Re2.value;
+                            Im2.value = Im2.value;
+                            break;
+                    } break;
+                                       
+            }
+        }
+        function workout(){
+            let Re0 = document.getElementById('addRe0'),
+            Re1 = document.getElementById('addRe1'),
+            Re2 = document.getElementById('addRe2'),
+            Im0 = document.getElementById('addIm0'),
+            Im1 = document.getElementById('addIm1'),
+            Im2 = document.getElementById('addIm2');
+            Re2.value = parseFloat(Re0.value) + parseFloat(Re1.value);
+            Im2.value = parseFloat(Im0.value) + parseFloat(Im1.value);
         }
     </script>
 </html>
