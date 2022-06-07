@@ -5,14 +5,16 @@
             #workingbox, #circuit, #parallel, #series {
                 border-style: solid;
                 height: fit-content;
-                width: fit-content;                
-                text-align: center;
+                width: fit-content;
                 margin: auto;
                 margin-top: 10px;
                 margin-bottom: 10px;
             }
             #workingbox, #circuit {
                 border-color:gray;
+            }
+            #workingbox {
+                text-align: left;
             }
             #series {
                 border-top: 0;
@@ -50,7 +52,10 @@
                 <option value="v">Voltage</option>
                 <option value="c">Current</option></select> Source(<span id='sourceUnits'>V</span>)
             <input type='number' id='sVal' oninput='setSVal(this.value);sumAll()'>
-            ∠ <input type='number' id='pShift' oninput='setPShift(this.value);sumAll()'>°
+            ∠ <input type='number' id='pShift' oninput='setPShift(this.value);sumAll()'>
+            <select id="pShiftType" oninput='setSType(this.value);sumAll()'>
+                <option value="rad">rad</option>
+                <option value="deg">°</option></select>
         </div>  
         <div id='circuit'>
             <span id='output'>Z = 0<br>V = ...<br>I = ...</span>
@@ -65,31 +70,31 @@
             <span id='working'></span>
             <span id='working2'></span>
         </div><hr style="color: black;">
-        <h2>Complex Addition</h2>
+        <h2>Superposition</h2>
         <form oninput="workout()">
-            (
-            <input type='number' id='addRe0'>
+            <button onclick='resetSP();' type='button'>Reset to 0</button><br><br><select id="addSub" >
+                <option value="add">+</option>
+                <option value="sub">-</option></select>(
+            <input type='number' id='addRe'>
             +
-            <input type='number' id='addIm0'>
-            j)<br><br>+(
-            <input type='number' id='addRe1'>
-            +
-            <input type='number' id='addIm1'>
-            j)<br><br>=(
-            <input type='number' id='addRe2'>
-            +
-            <input type='number' id='addIm2'>
-            j)<button onclick='copyRow(1,2);workout()' type='button'>Copy to 2nd row</button>
+            <input type='number' id='addIm'>
+            j)<button onclick='superPosition();' type='button'>Superposition</button>
         </form>
         <div id="workingbox">
-            <span id='working3'></span>
+            <p id='working3'>
+                <span id="voltage"></span>
+                <span id="current"></span>
+                <span id="power"></span>
+            </p>
         </div>
         <br><br><br>
         <h3>Information</h3>
         <ul>
-            <li></li>
+            <li>All calculations are in Volts, Ohms and Amperes</li>
+            <li>Entering sinusoids as sources: 4sin(100t+30°) → 4∠(90-30)° at 100 deg/s ; 5cos(1000t+40) → 5∠40rad at 1000 rad/s</li>
+            <li>Assuming Sin output, just use sine variables ; assuming cos output (preferred), just use cos variables</li>
             <li>Checkboxes will highlight relevant sections of the total impedance calculations and/or generate impedance, voltage and current calculations</li>
-            <li>Checkboxes will also load the voltage of the last component selected (closest to screen bottom) to the first value of the complex addition calculator this is so that the effect of multiple sources can be summed</li>
+            <li>Checkboxes will also load the voltage of the last component selected (closest to screen bottom) to the second value of the Complex Addition/Substraction calculator this is so that the effect of multiple sources can be summed</li>
             <li>Current from source is considered clockwise</li>
             <li>Elements in Series have vertical borders of the same color</li>
             <li>Elements in Parallel have black horiztonal borders</li>
@@ -104,8 +109,10 @@
         // Source variables
         var w = 1.0;            // Freq
         var isVSource = true;   // Voltage or current source
-        var sourceVal;          // Voltage/Amperage
-        var pShift;             // Phase shift of source
+        var sourceVal = 5;      // Voltage/Amperage
+        var pShift = 0;         // Phase shift of source
+        // Output Variables
+        var prepV, prepI;       // Voltage and Current ready to superposition
         // Color list to cycle through for different groups of series
         var colors = ["Red","Cyan","Blue","DarkBlue","LightBlue","Purple","Yellow","Lime","Magenta","Orange","Brown","Maroon","Green","Olive"];
         var cInt = 0;   // Index to cycle through colors
@@ -136,12 +143,13 @@
         function setSType(val){
             isVSource = val=='v'?true : val=='c'?false : isVSource;
             document.getElementById('sourceUnits').innerHTML = isVSource?'V':'A';
+            setPShift(document.getElementById('pShift').value);
         }
         function setSVal(val){
             sourceVal = parseFloat(val);
         }
         function setPShift(val){
-            pShift = parseFloat(val);
+            pShift = document.getElementById("pShiftType").value=="rad"?parseFloat(val):parseFloat(val/180*Math.PI);
         }
         /**
          * Adding new inputs
@@ -174,7 +182,9 @@
             document.getElementById("sType").value = "v";
             document.getElementById("sVal").value = 5;
             document.getElementById("pShift").value = 0;
-            setSVal(5)
+            document.getElementById("pShiftType").value = "rad";
+            document.getElementById("addRe2").value = 0;
+            document.getElementById("addIm2").value = 0;
         }
         /**
          * Calculating impedances
@@ -292,11 +302,12 @@
                             let temp0 = elements[i].querySelector(":scope > .backend");
                             let compZ = [parseFloat(temp0.querySelector("#A").innerHTML),parseFloat(temp0.querySelector("#B").innerHTML)];
                             let compV = complexFrac(complexMult(voltage,compZ),sumZ);
-                            working2.innerHTML += "<div id='workingbox'><u><b>"+elements[i].id+"</u></b><br>Z = "+complexString(compZ)+ "<br><br>V = ("+complexString(voltage,false)+")*("+complexString(compZ,false)+")/("+complexString(sumZ,false)+")<br>  = "+complexString(compV)+"<br><br>I = V/Z<br>  = "+complexString(complexFrac(compV,compZ))+"</div>";
-                            document.getElementById('addRe0').value = compV[0];
-                            document.getElementById('addIm0').value = compV[1];
-                            document.getElementById('addRe1').value = "";
-                            document.getElementById('addIm1').value = "";
+                            let compI = complexFrac(compV,compZ);
+                            working2.innerHTML += "<div id='workingbox'><u><b>"+elements[i].id+"</u></b><br>Z = "+complexString(compZ)+ "<br><br>V = ("+complexString(voltage,false)+")*("+complexString(compZ,false)+")/("+complexString(sumZ,false)+")<br>  = "+complexString(compV)+"<br><br>I = V/Z<br>  = "+complexString(compI)+"<br><br>P = I*V<br> = "+complexString(complexMult(compV,compI))+"</div>";
+                            prepV = compV;
+                            prepI = complexFrac(compV,compZ);
+                            document.getElementById('addRe').value = prepV[0];
+                            document.getElementById('addIm').value = prepV[1];
                         }
                         break;
                     case 'parallel':
@@ -363,8 +374,8 @@
             return [m,angle];
         }
         function toCartesian(m,angle){
-            let A = m*Math.cos(angle/180*Math.PI);
-            let B = m*Math.sin(angle/180*Math.PI);
+            let A = m*Math.cos(angle);
+            let B = m*Math.sin(angle);
             return [A,B];
         }
         function complexInv(Re,Im){
@@ -397,62 +408,72 @@
             switch(i0){
                 case 0:
                     switch(i1){
-                        case 0:
-                            Re0.value = Re0.value;
-                            Im0.value = Im0.value;
-                            break;
                         case 1:
+                            Re1.value = Re0.value;
+                            Im1.value = Im0.value;
+                            break;
+                        case 2:
+                            Re2.value = Re0.value;
+                            Im2.value = Im0.value;
+                            break;
+                    }
+                    Re0.value = "";
+                    Im0.value = "";
+                    break;
+                case 1:
+                    switch(i1){
+                        case 0:
                             Re0.value = Re1.value;
                             Im0.value = Im1.value;
                             break;
                         case 2:
-                            Re0.value = Re2.value;
-                            Im0.value = Im2.value;
-                            break;
-                    } break;
-                case 1:
-                    switch(i1){
-                        case 0:
-                            Re1.value = Re0.value;
-                            Im1.value = Im0.value;
-                            break;
-                        case 1:
-                            Re1.value = Re1.value;
-                            Im1.value = Im1.value;
-                            break;
-                        case 2:
-                            Re1.value = Re2.value;
-                            Im1.value = Im2.value;
-                            break;
-                    } break;
-                case 2:
-                    switch(i1){
-                        case 0:
-                            Re2.value = Re0.value;
-                            Im2.value = Im0.value;
-                            break;
-                        case 1:
                             Re2.value = Re1.value;
                             Im2.value = Im1.value;
                             break;
+                    }
+                    Re1.value = "";
+                    Im1.value = "";
+                    break;
+                case 2:
+                    switch(i1){
+                        case 0:
+                            Re0.value = Re2.value;
+                            Im0.value = Im2.value;
+                            break;
+                        case 1:
+                            Re1.value = Re2.value;
+                            Im1.value = Im2.value;
+                            break;
+                    }
+                    Re2.value = "";
+                    Im2.value = "";
+                    break;
+                case 3:
+                    switch(i1){
+                        case 0:
+                            Re0.value = 0;
+                            Im0.value = 0;
+                            break;
+                        case 1:
+                            Re1.value = 0;
+                            Im1.value = 0;
+                            break;
                         case 2:
-                            Re2.value = Re2.value;
-                            Im2.value = Im2.value;
+                            Re2.value = 0;
+                            Im2.value = 0;
                             break;
                     } break;
-                                       
             }
         }
         function workout(){
             let Re0 = document.getElementById('addRe0'),
             Re1 = document.getElementById('addRe1'),
-            Re2 = document.getElementById('addRe2'),
             Im0 = document.getElementById('addIm0'),
-            Im1 = document.getElementById('addIm1'),
             Im2 = document.getElementById('addIm2');
-            Re2.value = parseFloat(Re0.value) + parseFloat(Re1.value);
-            Im2.value = parseFloat(Im0.value) + parseFloat(Im1.value);
-            document.getElementById('working3').innerHTML += "<div id='workingbox'>"+sigfig(parseFloat(Re0.value))+" "+add(sigfig(parseFloat(Im0.value)))+"j<br>+ "+sigfig(parseFloat(Re1.value))+" "+add(sigfig(parseFloat(Im1.value)))+"j<br>= "+sigfig(parseFloat(Re2.value))+" "+add(sigfig(parseFloat(Im2.value)))+"j<br><button onclick='this.parentElement.remove();sumAll()' type='button'>Delete</button></div>";
+            let addsub = document.getElementById('addSub').value == "add";
+            Re2.value =addsub? parseFloat(Re0.value)+parseFloat(Re1.value):parseFloat(Re0.value)-parseFloat(Re1.value);
+            Im2.value =addsub? parseFloat(Im0.value)+parseFloat(Im1.value):parseFloat(Im0.value)-parseFloat(Im1.value);
+            document.getElementById('working3').innerHTML += "<p><button onclick='this.parentElement.remove();' type='button'>X</button> ("+sigfig(parseFloat(Re0.value))+" "+add(sigfig(parseFloat(Im0.value)))+"j)"+(addsub?"+":"-")+"("+sigfig(parseFloat(Re1.value))+" "+add(sigfig(parseFloat(Im1.value)))+"j) = "+complexString([parseFloat(Re2.value),parseFloat(Im2.value)])+"</p>";
         }
     </script>
 </html>
