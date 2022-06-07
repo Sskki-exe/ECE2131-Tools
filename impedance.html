@@ -28,20 +28,28 @@
                 margin: 10px;
                 padding: 0px 10px;
             }
+            hr {
+                color: red;
+            }
         </style>
     </head>
     <body onload="init()" style="text-align: center;">
-        <h2>Impedance Calculator</h2>
+        <h2>Impedance, Voltage & Current Calculator</h2>
+        <h3>(Circuit Analysis)</h3>
         <div>        
             <label for='w'>w(rad/s):</label>
             <input type='number' id='w' oninput='setW(this.value);sumAll()'><br>
             <label for='degW'>w(degrees/s):</label>
             <input type='number' id='degW' oninput='setDegW(this.value);sumAll()'><br>
             <label for='HzW'>f(Hz):</label>
-            <input type='number' id='HzW' oninput='setHzW(this.value);sumAll()'>
-        </div>         
+            <input type='number' id='HzW' oninput='setHzW(this.value);sumAll()'><br><br>
+            Independent <select id="sType" oninput='setSType(this.value);sumAll()'>
+                <option value="v">Voltage</option>
+                <option value="c">Current</option></select> Source(<span id='sourceUnits'>V</span>)
+            <input type='number' id='sVal' oninput='setSVal(this.value);sumAll()'>
+        </div>  
         <div id='circuit' style='border-color:gray;'>
-            <span id='output'>Z = 0</span>
+            <span id='output'>Z = 0<br>V = ...<br>I = ...</span>
             <div>
                 <span class='backend'>Red</span>                
                 <button onclick='addSeries(this)' type='button'>Add Series</button>
@@ -51,10 +59,13 @@
         <div id="workingbox" style='border-color:gray;'>
             <span id="wCalc"></span>
             <span id='working'></span>
+            <span id='working2'></span>
         </div>
         <br><br><br>
         <h3>Information</h3>
         <ul>
+            <li>Checkboxes will highlight relevant sections of the total impedance calculations and/or generate impedance, voltage and current calculations</li>
+            <li>Current from source is considered clockwise</li>
             <li>Elements in Series have vertical borders of the same color</li>
             <li>Elements in Parallel have black horiztonal borders</li>
             <li>Numbers are shown to 4 significant digits but each calculation is done with the maximum digits possible</li>
@@ -63,7 +74,10 @@
     </body>
     <script>
         var working = document.getElementById('working');
+        var working2 = document.getElementById('working2');
         var w = 1.0;
+        var isVSource = true;
+        var sourceVal;
         var colors = ["Red","Cyan","Blue","DarkBlue","LightBlue","Purple","Yellow","Lime","Magenta","Orange","Brown","Maroon","Green","Olive"];
         var cInt = 0;
         function setW(val){
@@ -84,35 +98,48 @@
             document.getElementById("w").value = sigfig(w);
             document.getElementById("degW").value = sigfig(w/Math.PI*180);
         }
+        function setSType(val){
+            isVSource = val=='v'?true : val=='c'?false : isVSource;
+            document.getElementById('sourceUnits').innerHTML = isVSource?'V':'A';
+        }
+        function setSVal(val){
+            sourceVal = parseFloat(val);
+        }
         function addParallel(e){
             cInt = cInt+1 > colors.length ? 0 : cInt+1;
-            e.parentElement.outerHTML += "<div id='parallel' style='border-color:black'><span id='output'>Z = 0</span><div><span class='backend'>"+colors[cInt]+"</span><button onclick='addSeries(this)' type='button'>Add Series</button><button onclick='this.parentElement.parentElement.remove();sumAll()' type='button'>X</button></div></div>";
+            e.parentElement.outerHTML += "<div id='parallel' style='border-color:black'><span id='output'>Z = 0<br>V = ...<br>I = ...</span><div><span class='backend'>"+colors[cInt]+"</span><input type='checkbox' id='toOutput' onclick='sumAll()'><button onclick='addSeries(this)' type='button'>Add Series</button><button onclick='this.parentElement.parentElement.remove();sumAll()' type='button'>X</button></div></div>";
         }
         function addSeries(e){
             let color = e.parentElement.querySelector('.backend').textContent;
-            e.parentElement.outerHTML += "<div id='series' style='border-color:"+color+";'><div><button onclick='addResistor(this)' type='button'>Add Resistor</button><button onclick='addInductor(this)' type='button'>Add Inductor</button><button onclick='addCapacitor(this)' type='button'>Add Capacitor</button><button onclick='addParallel(this)' type='button'>Add Parallel</button><button onclick='this.parentElement.parentElement.remove();sumAll()' type='button'>X</button></div><span id='output' style='color:"+color+"'>Z = 0</span></div>";
+            e.parentElement.outerHTML += "<div id='series' style='border-color:"+color+";'><div id='controls'><input type='checkbox' id='toOutput' onclick='sumAll()'><button onclick='addResistor(this)' type='button'>Add Resistor</button><button onclick='addInductor(this)' type='button'>Add Inductor</button><button onclick='addCapacitor(this)' type='button'>Add Capacitor</button><button onclick='addParallel(this)' type='button'>Add Parallel</button><button onclick='this.parentElement.parentElement.remove();sumAll()' type='button'>X</button></div><span id='output' style='color:"+color+"'>Z = 0</span></div>";
         }
         function init(){    
             colorI = 0;
             document.getElementById("w").value = 1000;
             setW(1000);
+            document.getElementById("sType").value = "v";
+            document.getElementById("sVal").value = 5;
+            setSVal(5)
         }
         function addResistor(e){
-            e.parentElement.outerHTML += "<div id='resistor'><label for='r'>Resistor(Ohm):</label><input type='number' id='r' oninput='sumAll();'><button onclick='this.parentElement.remove();sumAll()' type='button'>X</button></div>";
+            e.parentElement.outerHTML += "<div id='resistor'><input type='checkbox' id='toOutput' onclick='sumAll()'><label for='r'>Resistor(Ohm):</label><input type='number' id='r' oninput='sumAll();'><button onclick='this.parentElement.remove();sumAll()' type='button'>X</button><p class='backend'></p></div>";
         }        
         function addInductor(e){
-            e.parentElement.outerHTML += "<div id='inductor'><label for='L'>Inductor(mH):</label><input type='number' id='L' oninput='sumAll();'><button onclick='this.parentElement.remove();sumAll()' type='button'>X</button></div>";
+            e.parentElement.outerHTML += "<div id='inductor'><input type='checkbox' id='toOutput' onclick='sumAll()'><label for='L'>Inductor(mH):</label><input type='number' id='L' oninput='sumAll();'><button onclick='this.parentElement.remove();sumAll()' type='button'>X</button><p class='backend'></p></div>";
         }
         function addCapacitor(e){
-            e.parentElement.outerHTML += "<div id='capacitor'><label for='c'>Capacitor(nF):</label><input type='number' id='c' oninput='sumAll();'><button onclick='this.parentElement.remove();sumAll()' type='button'>X</button></div>";
+            e.parentElement.outerHTML += "<div id='capacitor'><input type='checkbox' id='toOutput' onclick='sumAll()'><label for='c'>Capacitor(nF):</label><input type='number' id='c' oninput='sumAll();'><button onclick='this.parentElement.remove();sumAll()' type='button'>X</button><p class='backend'></p></div>";
         }
         function sumAll(){
-            working.innerHTML = "Z = ";
+            working.innerHTML = "Total Z = ";
+            working2.innerHTML = "";
             parallelSum(document.getElementById('circuit'),false);
             working.innerHTML += "<br>" + document.getElementById('circuit').querySelector(':scope > #output').innerHTML;
+            voltAll();
         }
         function sum(e){
-            working.innerHTML += "( ";
+            let flag = e.querySelector('#toOutput').checked;
+            working.innerHTML += (flag?"<hr>":"")+"( ";
             let sumA = 0;
             let sumB = 0;
             var elements = e.querySelectorAll(':scope > div');            
@@ -123,20 +150,25 @@
                         if(r!=""){
                             sumA += parseFloat(r);
                             working.innerHTML += i>1? add(r)+" " : r+" ";
+                            elements[i].querySelector('.backend').innerHTML = "<span id='A'>"+r+"</span><span id='B'>0</span>";
                         }
                         break;
                     case 'inductor':
                         let L = elements[i].querySelector('#L') .value;
                         if (L!=""){
-                            sumB += parseFloat(L)*0.001*w;
-                            working.innerHTML += i>1? add(sigfig(parseFloat(L)*0.001))+"*"+w+"j " : sigfig(parseFloat(L)*0.001)+"*"+w+"j "
+                            let Ltemp = parseFloat(L)*0.001;
+                            sumB += Ltemp*w;
+                            working.innerHTML += i>1? add(sigfig(Ltemp))+"*"+w+"j " : sigfig(Ltemp)+"*"+w+"j ";
+                            elements[i].querySelector('.backend').innerHTML = "<span id='A'>0</span><span id='B'>"+Ltemp*w+"</span>";
                         }
                         break;
                     case 'capacitor':
                         let c = elements[i].querySelector('#c') .value;
                         if (c!=""){
-                            sumB -= 1/(parseFloat(c)*0.000000001*w);
-                            working.innerHTML += "-1/("+sigfig(parseFloat(c)*0.000000001)+"*"+w+")j ";
+                            let cTemp = parseFloat(c)*0.000000001;
+                            sumB -= 1/(cTemp*w);
+                            working.innerHTML += "-1/("+sigfig(cTemp)+"*"+w+")j ";
+                            elements[i].querySelector('.backend').innerHTML = "<span id='A'>0</span><span id='B'>"+(-1/(cTemp*w))+"</span>";
                         }
                         break;
                     case 'parallel':
@@ -148,16 +180,16 @@
                         break;
                 }
             }
-            working.innerHTML += ")";
-            let ma = toPhasor(sumA,sumB);
-            e.querySelector(":scope > #output").innerHTML = "Z = "+sigfig(sumA)+" "+add(sigfig(sumB))+"j = "+angle(ma)
+            working.innerHTML += ")"+(flag?"<hr>":"");
+            e.querySelector(":scope > #output").innerHTML = "Z = "+complexString([sumA,sumB])
             +"<p class='backend'>"
                 +"<span id='A'>"+sumA+"</span>"
                 +"<span id='B'>"+sumB+"</span>"
                 +"</p>";
         }
         function parallelSum(e,nf=true){
-            working.innerHTML += nf? "(" : "";
+            let flag = e.querySelector('#toOutput').checked;
+            working.innerHTML += (flag?"<hr>":"") + (nf? "(" : "");
             let invSumRe = 0;
             let invSumIm = 0;
             var series = e.querySelectorAll(':scope > div#series');
@@ -169,20 +201,102 @@
                 invSumRe += invSeries[0];
                 invSumIm += invSeries[1];
             }
-            working.innerHTML += nf? ")" : "";
+            working.innerHTML += (nf? ")" : "")+(flag?"<hr>":"");
             let invSum = complexInv(invSumRe, invSumIm);
             let sumA = invSum[0];
             let sumB = invSum[1];
-            let ma = toPhasor(sumA,sumB);
             if (isNaN(sumA)){
-                e.querySelector(":scope > #output").innerHTML = "Z = 0";
+                e.querySelector(":scope > #output").innerHTML = "Z = 0<br>V = ...<br>I = ...<br>";
                 return;
             }
-            e.querySelector(":scope > #output").innerHTML = "Z = "+sigfig(sumA)+" "+add(sigfig(sumB))+"j = "+angle(ma)
+            e.querySelector(":scope > #output").innerHTML = "Z = "+complexString([sumA,sumB])
             +"<p class='backend'>"
                 +"<span id='A'>"+sumA+"</span>"
                 +"<span id='B'>"+sumB+"</span>"
                 +"</p>";
+        }
+        function voltAll(){
+            let temp = document.getElementById('output').querySelector('.backend');
+            let A = parseFloat(temp.querySelector('#A').innerHTML);
+            let B = parseFloat(temp.querySelector('#B').innerHTML);
+            let voltage = isVSource?[sourceVal,0]:complexMult([sourceVal,0],[A,B]);
+            parallelVolt(document.getElementById('circuit'),voltage);
+        }
+        function volt(e,voltage){
+            let temp = e.querySelector(":scope > #output");
+            let sumZ = [parseFloat(temp.querySelector("#A").innerHTML),parseFloat(temp.querySelector("#B").innerHTML)];
+            e.querySelector(":scope > #output").innerHTML += "<p class='backend'>"
+                +"<span id='V0'>"+voltage[0]+"</span>"
+                +"<span id='V1'>"+voltage[1]+"</span>"
+                +"</p>"+currentCalc(voltage,sumZ);
+            var elements = e.querySelectorAll(':scope > div');            
+            for (let i=0; i<elements.length; i++){
+                
+                switch(elements[i].id){
+                    case 'resistor':
+                    case 'inductor':
+                    case 'capacitor':
+                        if(elements[i].querySelector("#toOutput").checked){
+                            let temp0 = elements[i].querySelector(":scope > .backend");
+                            let compZ = [parseFloat(temp0.querySelector("#A").innerHTML),parseFloat(temp0.querySelector("#B").innerHTML)];
+                            let compV = complexFrac(complexMult(voltage,compZ),sumZ);
+                            working2.innerHTML += "<div id='workingbox'><u><b>"+elements[i].id+"</u></b><br>Z = "+complexString(compZ)+ "<br><br>V = ("+complexString(voltage,false)+")*("+complexString(compZ,false)+")/("+complexString(sumZ,false)+")<br>  = "+complexString(compV)+"<br><br>I = V/Z<br>  = "+complexString(complexFrac(compV,compZ))+"</div>"; 
+                        }
+                        break;
+                    case 'parallel':
+                        let temp0 = elements[i].querySelector(":scope > #output");
+                        let compZ = [parseFloat(temp0.querySelector("#A").innerHTML),parseFloat(temp0.querySelector("#B").innerHTML)];
+                        let compV = complexFrac(complexMult(voltage,compZ),sumZ);
+                        if(elements[i].querySelector("#toOutput").checked){
+                            working2.innerHTML += "<div id='workingbox'><u><b>parallel</u></b><br>Z = "+complexString(compZ)+ "<br><br>V = ("+complexString(voltage,false)+")*("+complexString(compZ,false)+")/("+complexString(sumZ,false)+")<br>  = "+complexString(compV)+"<br><br>I = V/Z<br>  = "+complexString(complexFrac(compV,compZ))+"</div>";
+                        }
+                        parallelVolt(elements[i],compV);
+                        break;
+                }
+            }
+        }
+        function parallelVolt(e,voltage){
+            let temp = e.querySelector(":scope > #output");
+            let sumZ = [parseFloat(temp.querySelector("#A").innerHTML),parseFloat(temp.querySelector("#B").innerHTML)];
+            e.querySelector(":scope > #output").innerHTML += "V = "+complexString(voltage)
+            +"<p class='backend'>"
+                +"<span id='V0'>"+voltage[0]+"</span>"
+                +"<span id='V1'>"+voltage[1]+"</span>"
+                +"</p>"+currentCalc(voltage,sumZ);
+            var series = e.querySelectorAll(':scope > div#series');
+            for (let i=0; i<series.length; i++){
+                volt(series[i],voltage);
+            }
+        }
+        function currentCalc(voltage, impedance){
+            let current = complexFrac(voltage,impedance);
+            return "I = "+ complexString(current);
+            +"<p class='backend'>"
+                +"<span id='I0'>"+current[0]+"</span>"
+                +"<span id='I1'>"+current[1]+"</span>"
+                +"</p>";
+        }
+        function complexString(number,eq=true){
+            return eq?sigfig(number[0])+" "+add(sigfig(number[1]))+"j = "+angle(toPhasor(number[0],number[1])):sigfig(number[0])+" "+add(sigfig(number[1]))+"j";
+        }
+        function complexFrac(Re0,Im0,Re1,Im1){
+            if(isNaN(Re0)){
+                Re1 = Im0[0];
+                Im1 = Im0[1];
+                Im0 = Re0[1];
+                Re0 = Re0[0];
+            }
+            let denominator = Re1*Re1 + Im1*Im1;
+            return [(Re0*Re1+Im0*Im1)/denominator, (Im0*Re1 - Im1*Re0)/denominator];
+        }
+        function complexMult(Re0,Im0,Re1,Im1){
+            if(isNaN(Re1)){
+                Re1 = Im0[0];
+                Im1 = Im0[1];
+                Im0 = Re0[1];
+                Re0 = Re0[0];
+            }
+            return [Re0*Re1-Im0*Im1, Re0*Im1+Re1*Im0];
         }
         function sigfig(num, sf=4){
             let output = parseFloat(num.toPrecision(sf));
@@ -192,9 +306,6 @@
             return num >= 0 ? "+ "+num : "- "+(-num);
         }
         function angle(ma){
-            if (isNaN(ma[1])){
-                return ma[0];
-            }
             return sigfig(ma[0])+" ∠ "+sigfig(ma[1])+"°";
         }
         function toPhasor(A,B){
